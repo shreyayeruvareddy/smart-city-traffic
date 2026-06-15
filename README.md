@@ -1,66 +1,69 @@
 # Smart City Traffic Management Pipeline
 
-> End-to-end ETL pipeline that simulates traffic sensor data across 10 Charlotte, NC intersections, predicts congestion levels (Low/Medium/High) and travel times using Random Forest ML, and loads structured results into a star schema database for BI dashboards.
+> End-to-end data engineering pipeline simulating 28,800 traffic sensor readings across 10 real Charlotte, NC intersections — with feature engineering, Random Forest ML models for congestion and travel-time prediction, star schema database, and an interactive Tableau dashboard.
 
 ---
 
 ## Project Overview
 
-This project builds a **production-grade smart city data pipeline** combining data engineering, machine learning, and business intelligence. It simulates 30 days of traffic sensor readings across 10 real Charlotte intersections, applies feature engineering and ML predictions, and stores analytics-ready data for Tableau/Power BI dashboards.
-
-| Local | Production |
-|---|---|
-| `data/raw/` folder | AWS S3 Raw Zone |
-| `data/processed/` folder | AWS S3 Processed Zone |
-| SQLite | PostgreSQL / AWS RDS |
-| `run_pipeline.py` | Apache Airflow DAG |
+This pipeline simulates traffic sensor data across 10 Charlotte intersections over 30 days (96 readings/day = 28,800 records), applies feature engineering, trains Random Forest models to predict congestion level and travel time, and loads results into a star schema database for BI reporting.
 
 ---
 
 ## Architecture
 
 ```
-Sensor Simulation (10 intersections, 30 days)
+Data Generation (28,800 records, 10 intersections, 30 days)
         |
         v
-[ Stage 1: Data Generation  ]  src/data_generator.py  → 28,800 records
+[ Stage 1: Generate   ]  src/data_generator.py   → 28,800 sensor readings
         |
         v
-[ Stage 2: ETL Transform    ]  src/transformation.py  → 14 engineered features
+[ Stage 2: Transform  ]  src/transformation.py   → 14 engineered features
         |
         v
-[ Stage 3: ML Prediction    ]  src/ml_model.py        → 85%+ accuracy
+[ Stage 3: ML Train   ]  src/ml_model.py         → Random Forest (85%+ accuracy)
         |
         v
-[ Stage 4: DB Load          ]  src/db_loader.py       → Star schema SQLite
+[ Stage 4: DB Load    ]  src/db_loader.py        → Star schema SQLite
         |
         v
-[ Stage 5: Validation       ]  Query summary          → Dashboard export
+[ Stage 5: Validate   ]  Query summary           → Tableau Dashboard
 ```
 
 ---
 
-## ML Model Performance
+## Key Results
 
-| Model | Metric | Result |
-|---|---|---|
-| Random Forest Classifier | Congestion Accuracy | 85%+ |
-| Random Forest Classifier | Cross-val (5-fold) | 85%+ |
-| Random Forest Regressor | Travel Time MAE | < 0.5 min |
-| Random Forest Regressor | R² Score | > 0.95 |
-
-**Top predictive features:** vehicle_count, rolling_avg_vehicles, hour, prev_vehicle_count, is_evening_rush
+| Metric | Result |
+|---|---|
+| Total Records | 28,800 |
+| Intersections | 10 (real Charlotte locations) |
+| Congestion Model Accuracy | 85%+ |
+| Travel Time Model R² | > 0.95 |
+| Pipeline Execution Time | 17.18 seconds |
 
 ---
 
-## Database Schema (Star Schema)
+## Key Business Insights
 
-```
-fact_traffic_readings  ←→  dim_intersection
-        ↕                  dim_time
-agg_intersection_daily     dim_weather
-pipeline_run_log
-```
+- **I-77 & I-85 Interchange**: Highest congestion at 22.5% high-congestion rate — priority for signal optimization
+- **Airport entrance & Josh Birmingham**: Most incident-prone (97 incidents/30 days) — recommend increased monitoring
+- **Highway intersections**: Fastest average speeds (36.4 mph) vs downtown (38.0 mph but more congested)
+- **Downtown intersections**: Slowest travel times (8.5+ min) — signal coordination opportunity
+- **Evening rush hour**: Produces 3x higher congestion than overnight baseline
+
+---
+
+## 📊 Tableau Dashboard
+
+**Live Dashboard:** [Smart City Traffic Management Dashboard](https://public.tableau.com/app/profile/bala.shreya.reddy.yeruva/viz/SmartCityTrafficManagementDashboard/SmartCityTrafficManagementDashboardYeruvaBalaShreyaReddy)
+
+Dashboard includes:
+- **Congestion by Intersection** (bar chart) — I-77 & I-85 Interchange at 22.53% high-congestion rate
+- **Incidents by Intersection** (bar chart) — Airport entrance leads with 97 incidents
+- **Avg Speed by Intersection Type** (bar chart) — Highway vs Downtown vs Arterial vs Suburban
+- **Traffic Volume** (packed bubble chart) — Visual comparison of average vehicle counts per intersection
 
 ---
 
@@ -70,10 +73,9 @@ pipeline_run_log
 |---|---|
 | Language | Python 3.11 |
 | Data Processing | Pandas 2.2, NumPy 1.26 |
-| Machine Learning | Scikit-learn 1.8 (Random Forest) |
+| Machine Learning | Random Forest (Classifier + Regressor) |
 | Database | SQLite → PostgreSQL upgrade path |
-| Orchestration | run_pipeline.py → Apache Airflow |
-| Visualization | Matplotlib, CSV export for Tableau |
+| Visualization | Tableau Dashboard |
 | Version Control | Git / GitHub |
 
 ---
@@ -81,25 +83,11 @@ pipeline_run_log
 ## Setup & Run
 
 ```bash
-# 1. Clone
 git clone https://github.com/shreyayeruvareddy/smart-city-traffic.git
 cd smart-city-traffic
-
-# 2. Install
 py -3.11 -m pip install -r requirements.txt
-
-# 3. Run pipeline
 py -3.11 run_pipeline.py
 ```
-
----
-
-## Key Insights (from 30-day simulation)
-
-- Evening rush (4–7 PM) produces **3x higher congestion** than off-peak hours
-- Downtown intersections average **40% more incidents** than suburban intersections
-- Random Forest achieves **85%+ accuracy** predicting congestion with vehicle_count as #1 feature
-- Travel time increases by average **2.8 minutes** during High vs Low congestion
 
 ---
 
